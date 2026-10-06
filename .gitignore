@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Test coverage
+coverage/
