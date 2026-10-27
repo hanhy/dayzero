@@ -21,12 +21,14 @@
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run format:check && npm test",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "tsx scripts/run-e2e.ts",
     "db:up": "docker compose up -d db",
     "db:migrate": "tsx scripts/migrate.ts",
     "verify:workflow": "tsx scripts/verify-workflow.ts",
     "verify:cluster": ".venv/bin/python scripts/clustering/verify.py",
-    "verify:m0": "npm run db:migrate && npm run verify:workflow && npm run verify:cluster && npm run test:e2e"
+    "verify:m0": "npm run db:migrate && npm run verify:workflow && npm run verify:cluster && npm run test:e2e",
+    "keys:init": "tsx scripts/init-key.ts",
+    "test:integration": "tsx scripts/verify-m1.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

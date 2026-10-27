@@ -19,7 +19,7 @@ test('renders baseline workload and supports orbit, selection, focus and flight 
       ).detail;
     });
   });
-  await page.goto('/');
+  await page.goto('/?benchmark=1');
   await expect(
     page.getByRole('heading', { name: '知识空间 / 技术预览' }),
   ).toBeVisible();
@@ -143,7 +143,7 @@ test('keeps node inspection available without WebGL', async ({ page }) => {
       return original.apply(this, args);
     } as typeof original;
   });
-  await page.goto('/');
+  await page.goto('/?benchmark=1');
   await expect(
     page.getByText(/三维场景暂不可用|当前浏览器不支持 WebGL/),
   ).toBeVisible();

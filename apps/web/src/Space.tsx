@@ -7,9 +7,11 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import type { BenchmarkGraph } from '@dayzero/contracts';
 import { createDriftParameters, updateDriftPositions } from './motion.ts';
+import NodeLabels, { LABEL_LIMIT } from './NodeLabels.tsx';
 import {
   createRoundPointMaterial,
   createRoundSpriteMaterial,
+  NODE_COLOR,
 } from './circle-materials.ts';
 
 export type CameraMode = 'orbit' | 'fly';
@@ -60,6 +62,8 @@ function CameraRig({
 }) {
   const { camera, gl } = useThree();
   const orbit = useRef<React.ComponentRef<typeof OrbitControls>>(null);
+  const previousMode = useRef(mode);
+  const previousReset = useRef(reset);
   const keys = useRef(new Set<string>());
   const frames = useRef({ elapsed: 0, count: 0 });
   const vector = useMemo(() => new THREE.Vector3(), []);
@@ -79,7 +83,13 @@ function CameraRig({
     orbit.current?.update();
   }, [focus, camera, graph, positions]);
   useEffect(() => {
-    if (mode === 'orbit') {
+    const returningFromFlight =
+      previousMode.current === 'fly' &&
+      mode === 'orbit' &&
+      previousReset.current === reset;
+    previousMode.current = mode;
+    previousReset.current = reset;
+    if (returningFromFlight) {
       keys.current.clear();
       if (document.pointerLockElement === gl.domElement)
         document.exitPointerLock();
@@ -89,7 +99,49 @@ function CameraRig({
         .addScaledVector(direction, 60);
       orbit.current?.update();
     }
-  }, [mode, camera, gl]);
+  }, [mode, reset, camera, gl]);
+  useEffect(() => {
+    const projected = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    const relative = new THREE.Vector3();
+    // Run before OrbitControls handles the wheel. A node under the cursor sets
+    // the dolly depth without changing the current viewing direction.
+    const aimZoom = (event: WheelEvent) => {
+      if (mode !== 'orbit' || event.deltaY >= 0 || !orbit.current) return;
+      const bounds = gl.domElement.getBoundingClientRect();
+      const x = event.clientX - bounds.left,
+        y = event.clientY - bounds.top;
+      camera.updateMatrixWorld();
+      camera.getWorldDirection(direction);
+      let closest = 28 * 28,
+        depth: number | null = null;
+      for (let index = 0; index < graph.nodes.length; index++) {
+        relative.fromArray(positions, index * 3).sub(camera.position);
+        const candidateDepth = relative.dot(direction);
+        if (candidateDepth <= camera.near) continue;
+        projected.fromArray(positions, index * 3).project(camera);
+        if (Math.abs(projected.z) > 1) continue;
+        const dx = ((projected.x + 1) * bounds.width) / 2 - x;
+        const dy = ((1 - projected.y) * bounds.height) / 2 - y;
+        const distance = dx * dx + dy * dy;
+        if (distance < closest) {
+          closest = distance;
+          depth = candidateDepth;
+        }
+      }
+      if (depth !== null) {
+        orbit.current.target
+          .copy(camera.position)
+          .addScaledVector(direction, depth);
+        orbit.current.update();
+      }
+    };
+    gl.domElement.addEventListener('wheel', aimZoom, {
+      capture: true,
+      passive: true,
+    });
+    return () => gl.domElement.removeEventListener('wheel', aimZoom, true);
+  }, [mode, camera, gl, graph, positions]);
   useEffect(() => {
     const editing = (target: EventTarget | null) =>
       target instanceof HTMLElement &&
@@ -194,7 +246,8 @@ function CameraRig({
       enabled={mode === 'orbit'}
       enableDamping
       dampingFactor={0.08}
-      minDistance={3}
+      zoomToCursor
+      minDistance={0.25}
       maxDistance={700}
     />
   );
@@ -205,12 +258,13 @@ function createEdgeLayer(
   positions: Float32Array,
   highlighted = false,
 ) {
-  const endpoints = new Float32Array(links.length * 6);
+  const endpoints = new Float32Array(Math.max(links.length, 1) * 6);
   links.forEach(([a, b], i) => {
     endpoints.set(positions.subarray(a * 3, a * 3 + 3), i * 6);
     endpoints.set(positions.subarray(b * 3, b * 3 + 3), i * 6 + 3);
   });
   const geometry = new LineSegmentsGeometry().setPositions(endpoints);
+  geometry.instanceCount = links.length;
   const buffer = (
     geometry.getAttribute('instanceStart') as THREE.InterleavedBufferAttribute
   ).data;
@@ -407,6 +461,7 @@ function Geometry({
 
 export default function Space(props: {
   graph: BenchmarkGraph;
+  labels?: string[];
   mode: CameraMode;
   onMode: (value: CameraMode) => void;
   selected: number | null;
@@ -416,6 +471,7 @@ export default function Space(props: {
   showEdges: boolean;
   onMetrics: (metrics: Metrics) => void;
 }) {
+  const labelOverlay = useRef<HTMLDivElement>(null);
   const positions = useMemo(() => {
     const array = new Float32Array(props.graph.nodes.length * 3);
     props.graph.nodes.forEach((node, i) => array.set(node.position, i * 3));
@@ -459,7 +515,27 @@ export default function Space(props: {
           focus={props.focus}
           onMetrics={props.onMetrics}
         />
+        <NodeLabels
+          graph={props.graph}
+          positions={positions}
+          selected={props.selected}
+          labels={props.labels}
+          overlay={labelOverlay}
+        />
       </Canvas>
+      <div
+        className="node-label-overlay"
+        ref={labelOverlay}
+        style={{ color: NODE_COLOR }}
+      >
+        {Array.from({ length: LABEL_LIMIT }, (_, index) => (
+          <span
+            className="node-name-label"
+            key={index}
+            style={{ display: 'none' }}
+          />
+        ))}
+      </div>
     </SceneBoundary>
   );
 }

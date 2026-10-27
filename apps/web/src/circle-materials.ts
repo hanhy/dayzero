@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const NODE_COLOR = '#9bd8ce';
+export const NODE_COLOR = '#9bd8ce';
 
 function installAnalyticCircle(
   material: THREE.PointsMaterial | THREE.SpriteMaterial,

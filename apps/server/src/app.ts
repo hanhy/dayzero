@@ -5,12 +5,22 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import type { Pool } from 'pg';
 import type { HealthResponse } from '@dayzero/contracts';
+import { registerKnowledgeRoutes } from './knowledge-routes.ts';
 
-export function createApp(pool: Pool) {
+export function createApp(
+  pool: Pool,
+  options: { masterKey?: string; logging?: boolean } = {},
+) {
   const app = Fastify({
-    logger: { redact: ['req.headers.authorization', 'req.headers.cookie'] },
+    bodyLimit: 16 * 1024 * 1024,
+    ajv: { customOptions: { removeAdditional: false } },
+    logger:
+      options.logging === false
+        ? false
+        : { redact: ['req.headers.authorization', 'req.headers.cookie'] },
   });
-  app.get('/api/health/live', async () => ({ status: 'ok', milestone: 'M0' }));
+  app.get('/api/health/live', async () => ({ status: 'ok', milestone: 'M1' }));
+  registerKnowledgeRoutes(app, pool, options.masterKey);
   app.get('/api/m0/evidence', async () => {
     const reports = await Promise.all(
       ['workflow', 'clustering'].map(async (name) => {
@@ -38,21 +48,21 @@ export function createApp(pool: Pool) {
     let payload: HealthResponse;
     try {
       const result = await pool.query<{ ready: boolean }>(`SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_schema='m0' AND table_name='workflow_commits'
+        SELECT 1 FROM information_schema.tables WHERE table_schema='knowledge' AND table_name='outbox'
       ) AND EXISTS (SELECT 1 FROM pg_extension WHERE extname='vector') AS ready`);
       const ready = result.rows[0]?.ready === true;
       payload = {
         status: ready ? 'ok' : 'degraded',
         database: 'ready',
         migrations: ready ? 'ready' : 'pending',
-        milestone: 'M0',
+        milestone: 'M1',
       };
     } catch {
       payload = {
         status: 'degraded',
         database: 'unavailable',
         migrations: 'unknown',
-        milestone: 'M0',
+        milestone: 'M1',
       };
     }
     return reply.code(payload.status === 'ok' ? 200 : 503).send(payload);

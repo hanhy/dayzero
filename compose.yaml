@@ -21,6 +21,7 @@ services:
       DATABASE_URL: postgresql://dayzero:dayzero_local@db:5432/dayzero
       HOST: 0.0.0.0
       PORT: 3188
+      MODEL_MASTER_KEY: ${MODEL_MASTER_KEY:-}
     ports:
       - '127.0.0.1:3188:3188'
     command: ['sh', '-c', 'npm run db:migrate && npm start']

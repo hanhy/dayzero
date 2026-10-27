@@ -1,4 +1,4 @@
-name: M0 checks
+name: Dayzero checks
 on: [push, pull_request]
 jobs:
   checks:
@@ -25,8 +25,11 @@ jobs:
       - run: npm run verify:workflow
         env:
           DATABASE_URL: postgresql://dayzero:dayzero_local@127.0.0.1:54329/dayzero
+      - run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://dayzero:dayzero_local@127.0.0.1:54329/dayzero
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: m0-evidence
+          name: milestone-evidence
           path: artifacts/

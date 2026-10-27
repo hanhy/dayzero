@@ -3,7 +3,7 @@
 版本：0.1 草案  
 日期：2026-10-27  
 需求基线：[PRD v0.2](PRD.md)  
-状态：M0 已完成技术验证；M1 至 M6 尚未实施，见第 12 节
+状态：M0、M1 已完成；M2 至 M6 尚未实施，见第 12 节
 
 首版采用 React 与 TypeScript 构建浏览器应用，Fastify 提供 API，LangGraph 编排知识录入流程，PostgreSQL 加 pgvector 统一保存知识、关系和向量。三维空间使用 Three.js 与 React Three Fiber，聚类使用 Python igraph 的 Leiden 实现。
 
@@ -349,9 +349,11 @@ M0 结束冻结首轮技术版本；M2 结束复核后续工作量。新增功�
 | Milestone | 状态 | 验收记录 |
 | --- | --- | --- |
 | M0 | 已完成，2026-10-27 | [工程基线与三项技术验证](M0_VALIDATION.md) |
-| M1 | 待开始 | 草稿、Markdown 与关系数据闭环 |
+| M1 | 已完成，2026-10-27 | [执行计划](M1_EXECUTION_PLAN.md)、[数据闭环验收](M1_VALIDATION.md) |
 | M2 至 M6 | 待开始 | 沿用本计划的依赖与验收条件 |
 
 M0 已建立 React/Vite、Fastify、pg-boss、PostgreSQL/pgvector 与 LangGraph 工程，锁定依赖和容器基础镜像，验证暂停恢复、提交后重放、三维基准与 Leiden 子进程接口。本阶段的测试数据全部隔离，不计入个人知识图谱。
+
+M1 已交付真实 Markdown 草稿、确认入图、手工关联、中文搜索、历史恢复、回收站、导入导出、空库备份恢复及加密模型配置。默认页面读取真实知识库，M0 基准移至 `?benchmark=1`。业务表位于 `knowledge` schema，图修改通过 PostgreSQL 事务、乐观版本和操作 ID 保证一致性，outbox 经真实 worker 消费。M1 使用 React 状态和请求封装管理单页界面，数据库业务查询使用参数化 SQL；路由、客户端缓存库、SSE 和模型适配器尚未接入，按后续实际需求推进。M2 的自动解析、语义匹配和关联建议仍未开放，语义聚类及算法配色留在 M5。
 
 当前前端开发端口为 5188，API 和 Compose 预览端口为 3188；浏览器验证单独使用 5199 和 3199。为避免占用其他项目已有服务，未沿用通用的 5173 和 3000 端口。
