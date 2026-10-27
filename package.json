@@ -1,0 +1,46 @@
+{
+  "name": "dayzero",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web,worker \"npm run dev -w @dayzero/server\" \"npm run dev -w @dayzero/web\" \"npm run dev -w @dayzero/worker\"",
+    "build": "npm run typecheck && npm run build -w @dayzero/web",
+    "start": "npm run start -w @dayzero/server",
+    "worker": "npm run start -w @dayzero/worker",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run format:check && npm test",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "verify:workflow": "tsx scripts/verify-workflow.ts",
+    "verify:cluster": ".venv/bin/python scripts/clustering/verify.py",
+    "verify:m0": "npm run db:migrate && npm run verify:workflow && npm run verify:cluster && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
+    "concurrently": "10.0.6",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "tsx": "4.23.15"
+  }
+}

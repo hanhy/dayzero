@@ -1,0 +1,11 @@
+.git
+node_modules
+**/dist
+test-results
+playwright-report
+.env
+.env.*
+.venv
+artifacts
+test-results
+playwright-report

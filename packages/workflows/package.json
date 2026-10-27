@@ -1,0 +1,12 @@
+{
+  "name": "@dayzero/workflows",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@langchain/langgraph": "1.5.3",
+    "@langchain/core": "1.3.0",
+    "@dayzero/db": "*"
+  }
+}

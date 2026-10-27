@@ -1,0 +1,8 @@
+package-lock.json
+docs/PRD.md
+docs/TECHNICAL_PLAN.md
+artifacts
+dist
+node_modules
+.venv
+scripts/clustering/requirements.txt
