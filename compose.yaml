@@ -46,6 +46,7 @@ services:
     environment:
       DATABASE_URL: postgresql://dayzero:dayzero_local@db:5432/dayzero
       PYTHON_BIN: /opt/venv/bin/python
+      MODEL_MASTER_KEY: ${MODEL_MASTER_KEY:-}
     command: ['npm', 'run', 'worker']
     volumes:
       - ./artifacts:/app/artifacts

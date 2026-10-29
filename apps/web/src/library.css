@@ -874,3 +874,78 @@
     padding-bottom: 10px;
   }
 }
+
+.ai-ingestion {
+  border: 1px solid #2b4749;
+  padding: 18px;
+  border-radius: 10px;
+  margin: 24px 0;
+}
+.ai-ingestion label {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0;
+  font-size: 12px;
+  color: #9ebeb8;
+}
+.ai-ingestion select,
+.ai-ingestion input:not([type='checkbox']),
+.ai-ingestion textarea {
+  width: 100%;
+  background: #0b171e;
+  color: #c9dfda;
+  border: 1px solid #304c50;
+  border-radius: 5px;
+  padding: 9px;
+}
+.ai-ingestion .checkbox-label {
+  display: flex;
+  align-items: flex-start;
+}
+.ai-ingestion input[type='checkbox'] {
+  margin-top: 3px;
+  flex: 0 0 auto;
+}
+.ai-stage {
+  color: #9bd8ce;
+}
+.ai-candidate,
+.ai-proposal {
+  border-top: 1px solid #294049;
+  margin: 14px 0;
+  padding: 14px 0;
+}
+.ai-proposal small,
+.ai-candidate small {
+  display: block;
+  color: #8babac;
+  line-height: 1.8;
+}
+.ai-candidate blockquote {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-left: 2px solid #507a75;
+  color: #a3b9b7;
+  max-height: 130px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+.ai-proposal p {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.ai-ingestion details {
+  margin: 15px 0;
+}
+.ai-ingestion summary {
+  cursor: pointer;
+  color: #b4d5ce;
+}
+.ai-ingestion .form-actions {
+  flex-wrap: wrap;
+}
+.duplicate-badge {
+  font-size: 10px;
+  color: #dbc49b;
+}

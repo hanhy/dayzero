@@ -91,3 +91,4 @@ export function createProofGraph(
     .addEdge('commit', END)
     .compile({ checkpointer: saver });
 }
+export { createIngestionGraph } from './ingestion.ts';

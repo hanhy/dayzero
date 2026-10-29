@@ -8,6 +8,7 @@ import type {
   KnowledgeRelation,
   KnowledgeBackup,
   RelationInput,
+  IngestionRun,
   Library,
   NodeHistory,
 } from '@dayzero/contracts';
@@ -328,13 +329,49 @@ export class KnowledgeService {
   async commitDraft(
     id: string,
     input: { operationId: string; expectedRevision: number; confirmed: true },
+    workflow?: { runId: string; decisionId: string },
   ) {
     return this.mutate(
       'draft.commit',
       input.operationId,
-      { id, ...input },
+      { id, ...input, ...(workflow ? { workflow } : {}) },
       async (client) => {
         const draft = await this.draft(client, id);
+        let workflowRun: IngestionRun | undefined;
+        if (workflow) {
+          const result = await client.query(
+            'SELECT status,decision,draft_id,draft_revision,parsed,candidates,proposals,workflow_version AS "workflowVersion" FROM knowledge.ingestion_runs WHERE id=$1',
+            [workflow.runId],
+          );
+          const run = result.rows[0];
+          if (
+            !run ||
+            run.status !== 'committing' ||
+            run.draft_id !== id ||
+            run.draft_revision !== draft.revision ||
+            run.decision?.id !== workflow.decisionId
+          )
+            throw new ApiError(409, '工作流确认已经失效或被取消');
+          for (const link of run.decision.links) {
+            const target = await this.node(client, link.targetId);
+            if (target.deletedAt || target.revision !== link.targetRevision)
+              throw new ApiError(409, '关联目标已修改或删除，请重新分析');
+          }
+          workflowRun = run;
+          draft.links = run.decision.links.map(
+            ({
+              targetId,
+              type,
+              direction,
+              description,
+            }: DraftContent['links'][number]) => ({
+              targetId,
+              type,
+              direction,
+              description,
+            }),
+          );
+        }
         active(draft);
         checkVersion(draft, input.expectedRevision);
         if (draft.committedNodeId)
@@ -352,6 +389,18 @@ export class KnowledgeService {
             draftRevision: draft.revision,
             confirmed: input.confirmed,
             links: draft.links,
+            ...(workflow
+              ? {
+                  runId: workflow.runId,
+                  decision: workflowRun?.decision,
+                  workflowVersion: workflowRun?.workflowVersion,
+                  analysis: {
+                    parsed: workflowRun?.parsed,
+                    candidates: workflowRun?.candidates,
+                    proposals: workflowRun?.proposals,
+                  },
+                }
+              : {}),
           },
         );
         const count = Number(
@@ -426,6 +475,11 @@ export class KnowledgeService {
           { revision: draft.revision },
           { nodeId: node.id, revision: committed.revision },
         );
+        if (workflow)
+          await client.query(
+            "UPDATE knowledge.ingestion_runs SET status='committed',stage='committed',result_node_id=$2,error=NULL,updated_at=now() WHERE id=$1",
+            [workflow.runId, node.id],
+          );
         return { node, draft: committed, relations };
       },
     );

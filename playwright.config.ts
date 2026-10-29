@@ -6,6 +6,8 @@ if (!databaseUrl)
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testMatch:
+    process.env.DAYZERO_M2_E2E === '1' ? '**/ingestion.m2.ts' : '**/*.spec.ts',
   fullyParallel: false,
   workers: 1,
   timeout: 90_000,

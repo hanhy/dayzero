@@ -257,7 +257,7 @@ export default function LibraryApp() {
         <a className="benchmark-link" href="/?benchmark=1" title="三维基准场景">
           M0
         </a>
-        <div className="rail-bottom">M1</div>
+        <div className="rail-bottom">M2</div>
       </aside>
       <div className="workspace">
         <header className="topbar">
@@ -667,7 +667,7 @@ export default function LibraryApp() {
             <span className="live-dot" /> PERSONAL KNOWLEDGE
           </span>
           <span>Dayzero / 每一份理解，都值得留下</span>
-          <span>M1 / KNOWLEDGE</span>
+          <span>M2 / INGESTION</span>
         </footer>
       </div>
       {editor && editorRecord && (
@@ -684,6 +684,9 @@ export default function LibraryApp() {
             onCommitted={committed}
             onClose={closeEditor}
             onTrash={trash}
+            onOpenExisting={(id) => {
+              void open({ kind: 'node', id });
+            }}
             apiRef={editorApi}
           />
         </Suspense>

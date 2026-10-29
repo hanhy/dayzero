@@ -28,7 +28,11 @@
     "verify:cluster": ".venv/bin/python scripts/clustering/verify.py",
     "verify:m0": "npm run db:migrate && npm run verify:workflow && npm run verify:cluster && npm run test:e2e",
     "keys:init": "tsx scripts/init-key.ts",
-    "test:integration": "tsx scripts/verify-m1.ts"
+    "test:integration": "tsx scripts/verify-m1.ts",
+    "test:m2": "tsx scripts/verify-m2.ts",
+    "test:m2:e2e": "tsx scripts/run-e2e.ts --m2",
+    "evaluate:m2": "tsx scripts/evaluate-m2.ts",
+    "evaluate:m2:live": "tsx scripts/evaluate-m2-live.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

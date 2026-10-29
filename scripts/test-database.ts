@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { setTimeout as delay } from 'node:timers/promises';
 import { pg, databaseUrl, loadEnvironment } from '@dayzero/db';
 
 export async function createTestDatabase(prefix = 'm1') {
@@ -36,6 +37,16 @@ export async function createTestDatabase(prefix = 'm1') {
     url: url.toString(),
     async destroy() {
       try {
+        // pg-pool can resolve end() before its TCP close callbacks finish.
+        // Let those sessions leave before DROP ... FORCE could terminate them.
+        for (let attempt = 0; attempt < 80; attempt++) {
+          const sessions = await admin.query(
+            'SELECT count(*) FROM pg_stat_activity WHERE datname=$1',
+            [name],
+          );
+          if (Number(sessions.rows[0].count) === 0) break;
+          await delay(25);
+        }
         await admin.query(`DROP DATABASE "${name}" WITH (FORCE)`);
       } finally {
         await admin.end();

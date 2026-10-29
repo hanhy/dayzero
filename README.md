@@ -1,8 +1,8 @@
 # Dayzero 个人知识图谱
 
-当前完成 **M1 知识与关系数据闭环**。默认页面是自己的真实知识库：Markdown 草稿自动保存，经明确确认后进入三维图谱，可手工维护关联、查看历史、使用回收站和备份。AI 自动录入和关联建议将在 M2 实现。
+当前完成 **M1 知识与关系数据闭环**，并交付 **M2 AI 录入工作流的工程实现**。默认页面是自己的真实知识库。M2 支持解析、匹配、建议、人工审阅和确认入图；隔离协议与恢复测试已通过，真实模型适配和建议质量仍待用户配置服务后验收。
 
-文档：[PRD](docs/PRD.md)、[技术计划](docs/TECHNICAL_PLAN.md)、[M1 执行计划](docs/M1_EXECUTION_PLAN.md)、[M1 验收记录](docs/M1_VALIDATION.md)。
+文档：[PRD](docs/PRD.md)、[技术计划](docs/TECHNICAL_PLAN.md)、[M1 验收记录](docs/M1_VALIDATION.md)、[M2 执行计划](docs/M2_EXECUTION_PLAN.md)、[M2 验收记录](docs/M2_VALIDATION.md)。
 
 ## 本机开发
 
@@ -39,7 +39,25 @@ docker compose run --rm --no-deps -v "$PWD/.env:/app/.env" app npm run keys:init
 docker compose up -d
 ```
 
-模型设置可保存对话和向量模型的服务地址、模型 ID 与 API Key。密钥由后端 AES-256-GCM 加密保存，界面只显示配置状态；连接测试和模型调用属于 M2。未初始化主密钥时仍可编辑知识，保存新的 API Key 会被阻止。
+模型设置可保存对话和向量模型的服务地址、模型 ID 与 API Key，保存后可独立测试连接。密钥由后端 AES-256-GCM 加密保存，界面只显示配置状态；app 和 worker 必须使用同一主密钥。未初始化主密钥时仍可编辑知识，保存新的 API Key 会被阻止。
+
+## AI 录入
+
+1. 在「模型设置」分别保存对话和向量配置，点击「测试已保存配置」。首版支持 Base URL 下的 `/chat/completions` 和 `/embeddings` HTTP JSON 协议；其他厂商协议需要后续适配。
+2. 新建并保存草稿，在「AI 录入工作流」选择两个配置后开始分析。原文不会被 AI 覆盖；初次分析会给已有知识生成向量，内容会发送到选定服务。
+3. 查看简明概念定义、匹配原因、原文片段和候选行号。概念解释直接回答“是什么”，不评价笔记完整性或展示待澄清、拆分建议。修改草稿后可重新分析，审阅下方也可点击「重新生成」。疑似重复可打开已有知识，不自动合并。
+4. 逐条接受或拒绝建议，可改类型、方向、说明并手工补充关联。点击「保存审阅决定」后，刷新可继续；未保存的审阅表单仍是当前页面的临时编辑。
+5. 核对最终清单并点击「确认 AI 审阅并入图」。无关联或疑似重复时需勾选明确独立新增。待审阅不产生正式节点；草稿或目标版本改变会阻止旧确认。
+
+失败可重试，取消不入图。AI 任务进行/待审阅时底部人工入图按钮禁用；取消后可以手工录入。运行阶段、结果、决定及检查点存于数据库，worker 重启后继续；已成功步骤缓存，正式提交幂等。单次网络请求超时 30 秒，限流和部分服务错误最多 3 次退避尝试，非法结构化输出最多 2 次；调用可能因故障重放，不承诺模型服务只计费一次。
+
+单次 AI 草稿分析限制 6 万字符，普通保存仍支持 100 万字符。语义索引按节点版本和模型配置指纹隔离，模型返回维度不一致时拒绝处理；替换模型请使用新的配置或模型 ID。空间虚线候选预览、自动云团与配色仍按 M4/M5 推进。
+
+## 划词解释
+
+在正文预览、Markdown 编辑器或普通文本输入框中选中文字，点击浮出的「✨ 解释」按钮，即可在小弹窗中流式查看解释。提示词固定为「xxx是什么？请以最简单的方式介绍它的概念」。只在点击后调用已保存的对话模型，不需要向量模型。
+
+弹窗可切换对话模型、停止生成、重新解释；关闭、点击外部或按 Esc 会取消当前请求。只发送选中的文字，不发送整篇笔记；解释不会自动改正文或入图。首版选区最多 500 字符，密码输入框不触发划词。
 
 ## 使用与数据恢复
 
@@ -62,6 +80,9 @@ npm run check
 npm run build
 npm run test:integration
 npm run test:e2e
+npm run test:m2
+npm run test:m2:e2e
+npm run evaluate:m2
 ```
 
 集成和浏览器验证需要数据库在线，数据库用户需有创建测试库权限。脚本创建独立临时数据库，结束后删除，不向个人库写测试样本。浏览器测试需要宿主机 Google Chrome，使用 `3199`、`5199` 端口，不复用开发服务。
@@ -73,6 +94,16 @@ npm run test:e2e
 | `npm run test:e2e`         | Markdown 完整闭环、多窗口冲突、模型设置，以及 M0 三维交互、帧率和 WebGL 降级         |
 | `npm run verify:workflow`  | M0 LangGraph 跨进程暂停恢复、提交后重放及并发幂等                                    |
 | `npm run verify:cluster`   | M0 Leiden 子进程协议与确定性验证                                                     |
+
+M2 命令：`test:m2` 验证可控 HTTP 模型、跨进程恢复、确认和异常路径；`test:m2:e2e` 启动独立 worker 完成浏览器审阅闭环；`evaluate:m2` 只测量 50 条开发标签的关键词召回，不调用模型。
+
+真实模型评估需要先保存可用模型配置，再用配置 ID 运行下面命令。它会对 30 个隔离样本、50 条用例发起真实模型请求，可能产生费用；不会把样本写入个人知识库。标签由代理编写，需要用户复核，建议接受率需人工评审，脚本不会编造接受率：
+
+```bash
+M2_CHAT_PROFILE_ID=<已保存的对话配置ID> M2_EMBEDDING_PROFILE_ID=<已保存的向量配置ID> npm run evaluate:m2:live
+```
+
+结果写入 `artifacts/m2-live-evaluation.json`。普通备份不含未完成 AI 运行、检查点和向量缓存；已确认入图的解析、候选依据、建议和人工决定快照保存在确认记录中，会随知识备份保留。M2 隔离报告与截图分别为 `artifacts/m2-integration.json`、`artifacts/m2-review.png`。
 
 聚类验证另需 Python 3.11：
 
@@ -92,7 +123,7 @@ apps/server        Fastify API、事务知识服务、备份与加密设置
 apps/worker        pg-boss、outbox 分发和幂等回执
 packages/contracts TypeBox 共享契约
 packages/db        PostgreSQL 连接、Drizzle 入口和 SQL 迁移
-packages/workflows LangGraph M0 验证流程，M2 接入真实录入
+packages/workflows LangGraph M0 验证流程与真实五步录入状态图
 scripts/clustering Python Leiden 与依赖锁定
 tests              规则、健康检查与浏览器用例
 docs               需求、计划和验收记录

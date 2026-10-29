@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import type { Pool } from 'pg';
 import type { HealthResponse } from '@dayzero/contracts';
+import { registerExplanationRoutes } from './explanation-routes.ts';
+import { registerIngestionRoutes } from './ingestion-routes.ts';
 import { registerKnowledgeRoutes } from './knowledge-routes.ts';
 
 export function createApp(
@@ -19,8 +21,10 @@ export function createApp(
         ? false
         : { redact: ['req.headers.authorization', 'req.headers.cookie'] },
   });
-  app.get('/api/health/live', async () => ({ status: 'ok', milestone: 'M1' }));
+  app.get('/api/health/live', async () => ({ status: 'ok', milestone: 'M2' }));
   registerKnowledgeRoutes(app, pool, options.masterKey);
+  registerIngestionRoutes(app, pool, options.masterKey);
+  registerExplanationRoutes(app, pool, options.masterKey);
   app.get('/api/m0/evidence', async () => {
     const reports = await Promise.all(
       ['workflow', 'clustering'].map(async (name) => {
@@ -48,21 +52,21 @@ export function createApp(
     let payload: HealthResponse;
     try {
       const result = await pool.query<{ ready: boolean }>(`SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_schema='knowledge' AND table_name='outbox'
+        SELECT 1 FROM information_schema.tables WHERE table_schema='knowledge' AND table_name='ingestion_runs'
       ) AND EXISTS (SELECT 1 FROM pg_extension WHERE extname='vector') AS ready`);
       const ready = result.rows[0]?.ready === true;
       payload = {
         status: ready ? 'ok' : 'degraded',
         database: 'ready',
         migrations: ready ? 'ready' : 'pending',
-        milestone: 'M1',
+        milestone: 'M2',
       };
     } catch {
       payload = {
         status: 'degraded',
         database: 'unavailable',
         migrations: 'unknown',
-        milestone: 'M1',
+        milestone: 'M2',
       };
     }
     return reply.code(payload.status === 'ok' ? 200 : 503).send(payload);

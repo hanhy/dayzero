@@ -28,6 +28,10 @@ jobs:
       - run: npm run test:integration
         env:
           DATABASE_URL: postgresql://dayzero:dayzero_local@127.0.0.1:54329/dayzero
+      - run: npm run test:m2
+        env:
+          DATABASE_URL: postgresql://dayzero:dayzero_local@127.0.0.1:54329/dayzero
+      - run: npm run evaluate:m2
       - uses: actions/upload-artifact@v4
         if: always()
         with:

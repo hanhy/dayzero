@@ -78,7 +78,8 @@ export default function ModelSettings({ onClose }: { onClose: () => void }) {
       </header>
       <div className="editor-scroll">
         <p className="muted">
-          分别保存对话模型和向量模型的连接配置。当前尚未启用 AI 分析与连接测试。
+          分别保存对话模型和向量模型的连接配置。保存后可分别测试连接，草稿内可启动
+          AI 分析。
         </p>
         {!ready && (
           <div className="notice-banner">
@@ -216,6 +217,28 @@ export default function ModelSettings({ onClose }: { onClose: () => void }) {
         )}
       </div>
       <footer className="drawer-footer">
+        <button
+          className="secondary-button"
+          disabled={busy || !profiles.some((p) => p.id === id)}
+          onClick={() => {
+            setBusy(true);
+            setError('');
+            setNotice('');
+            void mutation<{ durationMs: number; dimensions?: number }>(
+              `/api/models/${id}/test`,
+              {},
+            )
+              .then((result) =>
+                setNotice(
+                  `连接测试通过 · ${result.durationMs} ms${result.dimensions ? ` · ${result.dimensions} 维` : ''}`,
+                ),
+              )
+              .catch((e) => setError(e.message))
+              .finally(() => setBusy(false));
+          }}
+        >
+          测试已保存配置
+        </button>
         <span>普通备份不包含模型配置和密钥</span>
         <button
           className="primary-button"

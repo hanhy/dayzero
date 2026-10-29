@@ -1,4 +1,9 @@
-import { createCipheriv, randomBytes } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from 'node:crypto';
 import type { Pool } from 'pg';
 import type { ModelProfile, ProfileInput } from '@dayzero/contracts';
 import { ApiError, rows } from './knowledge-service.ts';
@@ -79,6 +84,56 @@ export class ModelProfiles {
       ],
     );
     return result[0]!;
+  }
+  async connection(id: string, purpose?: 'chat' | 'embedding') {
+    const result = await this.pool.query(
+      'SELECT * FROM knowledge.model_profiles WHERE id=$1',
+      [id],
+    );
+    const row = result.rows[0];
+    if (!row) throw new ApiError(404, '模型配置不存在');
+    if (purpose && row.purpose !== purpose)
+      throw new ApiError(400, '模型配置用途不匹配');
+    const version = createHash('sha256')
+      .update(
+        JSON.stringify([
+          row.base_url,
+          row.model_id,
+          row.purpose,
+          row.encrypted_key,
+        ]),
+      )
+      .digest('hex');
+    let apiKey = '';
+    if (row.encrypted_key) {
+      try {
+        const [format, nonce, tag, data] = row.encrypted_key.split(':');
+        if (format !== 'v1' || !this.encryptionReady) throw new Error('key');
+        const decipher = createDecipheriv(
+          'aes-256-gcm',
+          Buffer.from(this.masterKey, 'base64'),
+          Buffer.from(nonce, 'base64'),
+        );
+        decipher.setAuthTag(Buffer.from(tag, 'base64'));
+        apiKey = Buffer.concat([
+          decipher.update(Buffer.from(data, 'base64')),
+          decipher.final(),
+        ]).toString('utf8');
+      } catch {
+        throw new ApiError(
+          503,
+          '无法解密模型密钥，请检查本机主密钥或重新保存 API Key',
+        );
+      }
+    }
+    return {
+      id,
+      version,
+      purpose: row.purpose as 'chat' | 'embedding',
+      baseUrl: row.base_url as string,
+      modelId: row.model_id as string,
+      apiKey,
+    };
   }
   async remove(id: string) {
     await this.pool.query('DELETE FROM knowledge.model_profiles WHERE id=$1', [

@@ -1,5 +1,6 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
+import WordExplanation from './WordExplanation.tsx';
 import './style.css';
 import './library.css';
 
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Suspense fallback={<div className="loading-space">正在载入知识空间…</div>}>
       <App />
+      <WordExplanation />
     </Suspense>
   </StrictMode>,
 );

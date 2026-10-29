@@ -68,7 +68,7 @@ const node = async (id: string) =>
 try {
   assert.equal(
     (await call<{ milestone: string }>('GET', '/api/health')).milestone,
-    'M1',
+    'M2',
   );
   const aDraft = await draft('梯度下降');
   assert.equal((await library()).nodes.length, 0);

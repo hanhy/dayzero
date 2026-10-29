@@ -22,6 +22,7 @@ import {
   type KnowledgeEvent,
 } from '@dayzero/contracts';
 import MarkdownEditor from './MarkdownEditor.tsx';
+import IngestionPanel from './IngestionPanel.tsx';
 import { api, downloadText, mutation, operationId } from './api.ts';
 
 export type EditorHandle = { flush: () => Promise<void> };
@@ -150,6 +151,7 @@ export default function KnowledgeEditor({
   onCommitted,
   onClose,
   onTrash,
+  onOpenExisting,
   apiRef,
 }: {
   kind: Selection['kind'];
@@ -160,6 +162,7 @@ export default function KnowledgeEditor({
   onCommitted: (node: KnowledgeNode) => Promise<void>;
   onClose: () => Promise<void>;
   onTrash: (record: RecordValue, kind: Selection['kind']) => Promise<void>;
+  onOpenExisting: (id: string) => void;
   apiRef: Ref<EditorHandle>;
 }) {
   const [form, setForm] = useState(() => formOf(record));
@@ -177,6 +180,7 @@ export default function KnowledgeEditor({
     [tab, setTab] = useState<'preview' | 'edit'>(
       kind === 'draft' ? 'edit' : 'preview',
     );
+  const [aiActive, setAiActive] = useState(kind === 'draft');
   const [history, setHistory] = useState<NodeHistory | null>(null),
     [historyOpen, setHistoryOpen] = useState(false);
   const [deleteReview, setDeleteReview] = useState(false),
@@ -512,6 +516,16 @@ export default function KnowledgeEditor({
         )}
 
         {kind === 'draft' && !readOnly && (
+          <IngestionPanel
+            onActiveChange={setAiActive}
+            draftId={record.id}
+            library={library}
+            flush={flush}
+            onCommitted={onCommitted}
+            onOpenExisting={onOpenExisting}
+          />
+        )}
+        {kind === 'draft' && !readOnly && !aiActive && (
           <section className="editor-section">
             <h3>
               手工关联 <small>可选</small>
@@ -792,10 +806,14 @@ export default function KnowledgeEditor({
       <footer className="drawer-footer">
         {kind === 'draft' && !readOnly ? (
           <>
-            <span>将创建 1 个知识点、{form.links.length} 条关联</span>
+            <span>
+              {aiActive
+                ? 'AI 审阅请使用工作流内的确认按钮'
+                : `将创建 1 个知识点、${form.links.length} 条关联`}
+            </span>
             <button
               className="primary-button"
-              disabled={busy || !form.title.trim()}
+              disabled={busy || aiActive || !form.title.trim()}
               onClick={() => {
                 void perform(async () => {
                   const result = await mutation<{ node: KnowledgeNode }>(
@@ -812,7 +830,7 @@ export default function KnowledgeEditor({
                 });
               }}
             >
-              确认加入图谱 ↗
+              {aiActive ? '请在工作流内确认' : '确认加入图谱 ↗'}
             </button>
           </>
         ) : (

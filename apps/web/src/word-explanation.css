@@ -1,0 +1,210 @@
+.word-explain-toolbar,
+.word-explain-popup {
+  position: fixed;
+  z-index: 1000;
+  color: #c9dfda;
+  font-family: inherit;
+  box-shadow: 0 12px 36px #0006;
+}
+.word-explain-toolbar {
+  background: #102128;
+  border: 1px solid #365e5a;
+  border-radius: 9px;
+  padding: 4px;
+}
+.word-explain-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  color: #a6e0d3;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.word-explain-toolbar button:hover {
+  background: #21403f;
+}
+.word-explain-popup {
+  width: min(380px, calc(100vw - 24px));
+  background: #0e1c23;
+  border: 1px solid #365650;
+  border-radius: 13px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.word-explain-popup header {
+  padding: 16px 18px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #263c40;
+}
+.word-explain-popup header > div {
+  min-width: 0;
+}
+.word-explain-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #83b9ac;
+  letter-spacing: 1px;
+}
+.word-explain-popup h3 {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 7px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+.word-explain-close {
+  background: transparent;
+  border: 0;
+  color: #8baaa5;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.word-explain-prompt {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #78968f;
+  padding: 11px 18px 0;
+  max-height: 70px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.word-explain-answer {
+  padding: 14px 18px;
+  overflow: auto;
+  min-height: 90px;
+  max-height: 320px;
+  flex: 1;
+}
+.word-explain-text {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #c9dfda;
+}
+.word-explain-text p {
+  margin: 0 0 10px;
+}
+.word-explain-text > :last-child {
+  margin-bottom: 0;
+}
+.word-explain-text ul,
+.word-explain-text ol {
+  padding-left: 19px;
+  margin: 8px 0;
+}
+.word-explain-text li {
+  margin: 3px 0;
+}
+.word-explain-text h1,
+.word-explain-text h2,
+.word-explain-text h3,
+.word-explain-text h4 {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 10px 0 6px;
+  white-space: normal;
+}
+.word-explain-text a {
+  color: #a6e0d3;
+}
+.word-explain-text code {
+  font-size: 12px;
+  background: #172c31;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.word-explain-text pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #0a161b;
+  border-radius: 6px;
+  padding: 10px;
+}
+.word-explain-text pre code {
+  padding: 0;
+  background: transparent;
+}
+.word-explain-waiting {
+  font-size: 12px;
+  color: #82aaa0;
+  margin: 8px 0;
+}
+.word-explain-cursor {
+  display: inline-block;
+  width: 5px;
+  height: 13px;
+  background: #9bd8ce;
+  animation: word-cursor 1s step-end infinite;
+  margin-top: 7px;
+}
+.word-explain-error {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #e1b8a5;
+  margin: 12px 0 0;
+}
+.word-explain-popup footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid #263c40;
+}
+.word-explain-popup footer select {
+  min-width: 0;
+  max-width: 200px;
+  font-size: 11px;
+  color: #99b8b0;
+  background: #0a171d;
+  border: 1px solid #29453f;
+  border-radius: 5px;
+  padding: 7px;
+}
+.word-explain-popup footer button {
+  background: #23443f;
+  border: 1px solid #3d685b;
+  color: #b9e2d0;
+  padding: 7px 11px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.word-explain-popup button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.word-explain-popup button:focus-visible,
+.word-explain-toolbar button:focus-visible {
+  outline: 2px solid #9bd8ce;
+  outline-offset: 2px;
+}
+.word-explain-status {
+  padding: 0 18px 10px;
+  font-size: 10px;
+  color: #6f9488;
+}
+@keyframes word-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .word-explain-cursor {
+    animation: none;
+  }
+}
