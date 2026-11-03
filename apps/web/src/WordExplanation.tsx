@@ -79,6 +79,14 @@ export default function WordExplanation() {
     const inside = (target: EventTarget | null) =>
       target instanceof Element &&
       Boolean(target.closest('[data-word-explanation]'));
+    const scopeFor = (node: Node | null) =>
+      (node instanceof Element ? node : node?.parentElement)?.closest(
+        '[data-word-explanation-scope]',
+      );
+    const clearSelection = () => {
+      selectionRef.current = null;
+      setSelection(null);
+    };
     const read = () => {
       if (openRef.current || dragging) return;
       const active = document.activeElement;
@@ -89,11 +97,11 @@ export default function WordExplanation() {
         active instanceof HTMLTextAreaElement
       ) {
         if (
-          active instanceof HTMLInputElement &&
-          !['text', 'search', 'url', 'email', 'tel'].includes(active.type)
+          !scopeFor(active) ||
+          (active instanceof HTMLInputElement &&
+            !['text', 'search', 'url', 'email', 'tel'].includes(active.type))
         ) {
-          selectionRef.current = null;
-          setSelection(null);
+          clearSelection();
           return;
         }
         const start = active.selectionStart,
@@ -105,10 +113,20 @@ export default function WordExplanation() {
       } else {
         const selected = window.getSelection();
         if (selected && !selected.isCollapsed && selected.rangeCount) {
-          const node = selected.anchorNode?.parentElement;
-          if (node?.closest('[data-word-explanation],button,select')) return;
+          const range = selected.getRangeAt(0);
+          const scope = scopeFor(range.startContainer);
+          // The whole selection must remain inside the same permitted region.
+          if (
+            !scope ||
+            scope !== scopeFor(range.endContainer) ||
+            !scope.contains(range.commonAncestorContainer) ||
+            scope.closest('[data-word-explanation]')
+          ) {
+            clearSelection();
+            return;
+          }
           text = selected.toString();
-          bounds = selected.getRangeAt(0).getBoundingClientRect();
+          bounds = range.getBoundingClientRect();
         }
       }
       text = text.trim();

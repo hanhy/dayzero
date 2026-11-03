@@ -153,6 +153,51 @@ test('AI ingestion: model tests, durable review, edited relation and explicit co
     await expect(ai.getByText('概念解释', { exact: true })).toBeVisible();
     await expect(ai).toContainText('链式法则计算梯度，支持参数更新。');
     await expect(ai.getByText(/^待澄清：|^拆分建议：/)).toHaveCount(0);
+    // Generated matching commentary and page headings are outside the scope.
+    for (const target of [
+      page.getByRole('heading', { name: '我的知识空间', exact: true }),
+      ai.locator('.ai-candidate p').first(),
+    ]) {
+      await target.click();
+      await target.evaluate((element) => {
+        element.setAttribute('tabindex', '-1');
+        (element as HTMLElement).focus();
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const selection = window.getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.dispatchEvent(new Event('selectionchange'));
+      });
+      await page.waitForTimeout(180);
+      await expect(page.getByRole('toolbar', { name: '划词操作' })).toHaveCount(
+        0,
+      );
+    }
+    await ai
+      .locator('[data-word-explanation-scope="concept-explanation"]')
+      .click();
+    const crossRegionLength = await ai.evaluate((element) => {
+      const concept = element.querySelector(
+        '[data-word-explanation-scope="concept-explanation"]',
+      )!;
+      const outside = element.querySelector('.ai-candidate p')!;
+      (concept as HTMLElement).focus();
+      const range = document.createRange();
+      range.setStart(concept.firstChild!, 0);
+      range.setEnd(outside.firstChild!, 1);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+      return selection.toString().length;
+    });
+    expect(crossRegionLength).toBeGreaterThan(0);
+    expect(crossRegionLength).toBeLessThan(500);
+    await page.waitForTimeout(180);
+    await expect(page.getByRole('toolbar', { name: '划词操作' })).toHaveCount(
+      0,
+    );
     // Selection alone must not call a model. The first delta must be visible
     // while the upstream stream is still unfinished, and stop must cancel it.
     await page.getByRole('button', { name: '阅读预览', exact: true }).click();
@@ -198,6 +243,26 @@ test('AI ingestion: model tests, durable review, edited relation and explicit co
     await page
       .getByRole('textbox', { name: '知识点标题', exact: true })
       .selectText();
+    await page.waitForTimeout(180);
+    await expect(page.getByRole('toolbar', { name: '划词操作' })).toHaveCount(
+      0,
+    );
+    // Explanations, unlike titles and other chrome, are explicitly eligible.
+    const conceptText = ai.locator(
+      '[data-word-explanation-scope="concept-explanation"]',
+    );
+    await conceptText.click();
+    await conceptText.evaluate((element) => {
+      element.setAttribute('tabindex', '-1');
+      (element as HTMLElement).focus();
+      const range = document.createRange();
+      range.setStart(element.firstChild!, 0);
+      range.setEnd(element.firstChild!, 4);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
     await expect(page.getByRole('toolbar', { name: '划词操作' })).toBeVisible();
     await page.getByRole('button', { name: '用 AI 解释选中文字' }).click();
     await expect(wordPopup.getByLabel('词语解释内容')).toContainText(
@@ -216,6 +281,13 @@ test('AI ingestion: model tests, durable review, edited relation and explicit co
     await page.keyboard.press('ControlOrMeta+a');
     await expect(page.getByRole('toolbar', { name: '划词操作' })).toBeVisible();
     expect(streamPrompts).toHaveLength(2);
+    await page
+      .getByRole('textbox', { name: '知识点标题', exact: true })
+      .selectText();
+    await page.waitForTimeout(180);
+    await expect(page.getByRole('toolbar', { name: '划词操作' })).toHaveCount(
+      0,
+    );
     await page.keyboard.press('Escape');
     await ai.getByRole('button', { name: '接受建议' }).click();
     await ai

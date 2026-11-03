@@ -376,7 +376,9 @@ export default function IngestionPanel({
               {run.parsed && (
                 <details open>
                   <summary>概念解释</summary>
-                  <p>{run.parsed.summary}</p>
+                  <p data-word-explanation-scope="concept-explanation">
+                    {run.parsed.summary}
+                  </p>
                 </details>
               )}
               {run.candidates && (

@@ -42,7 +42,10 @@ const labels = relationLabels;
 const time = (value: string) => new Date(value).toLocaleString('zh-CN');
 export function MarkdownPreview({ text }: { text: string }) {
   return (
-    <div className="markdown-preview">
+    <div
+      className="markdown-preview"
+      data-word-explanation-scope="markdown-preview"
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}

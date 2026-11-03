@@ -29,7 +29,10 @@ export default function MarkdownEditor({
           markdown(),
           EditorView.lineWrapping,
           EditorState.readOnly.of(readOnly),
-          EditorView.contentAttributes.of({ 'aria-label': 'Markdown 正文' }),
+          EditorView.contentAttributes.of({
+            'aria-label': 'Markdown 正文',
+            'data-word-explanation-scope': 'markdown-editor',
+          }),
           EditorView.theme(
             {
               '&': {
