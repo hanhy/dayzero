@@ -38,7 +38,12 @@ try {
       await readFile('tests/fixtures/m2-evaluation.json', 'utf8'),
     ) as {
       labelStatus: string;
-      cases: { id: string; query: string; expected: string[] }[];
+      cases: {
+        id: string;
+        category: string;
+        query: string;
+        expected: string[];
+      }[];
     };
     const createDraft = async (title: string, markdown: string) =>
       runtime.service.knowledge.createDraft(randomUUID(), {
@@ -60,6 +65,7 @@ try {
       identities.set(input.id, saved.node.id);
     }
     const measurements = [];
+    await mkdir('artifacts', { recursive: true });
     for (const item of labels.cases) {
       const started = Date.now(),
         draft = await createDraft(item.query, item.query);
@@ -77,6 +83,7 @@ try {
       ).length;
       measurements.push({
         id: item.id,
+        category: item.category,
         query: item.query,
         expected: item.expected,
         status: result.status,
@@ -84,11 +91,18 @@ try {
         recall: expected.length ? found / expected.length : null,
         noMatch: !expected.length ? result.candidates?.length === 0 : null,
         durationMs: Date.now() - started,
+        parsed: result.parsed,
         candidates: result.candidates,
         proposals: result.proposals,
         calls: result.calls,
       });
-      console.log(`${item.id}: ${result.status}`);
+      await writeFile(
+        'artifacts/m2-live-progress.json',
+        JSON.stringify({ total: labels.cases.length, measurements }, null, 2),
+      );
+      console.log(
+        `${item.id}: ${result.status}, ${Date.now() - started}ms${result.error ? `, ${result.error}` : ''}`,
+      );
       await runtime.service.cancel(run.id);
     }
     const positives = measurements.filter((m) => m.recall !== null);

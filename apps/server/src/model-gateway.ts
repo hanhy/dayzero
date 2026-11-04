@@ -27,7 +27,7 @@ export class ModelGateway {
     try {
       for (let attempt = 0; attempt < 3; attempt++) {
         const signal = AbortSignal.any([
-          AbortSignal.timeout(30000),
+          AbortSignal.timeout(context.purpose === 'suggest' ? 120_000 : 30_000),
           ...(context.signal ? [context.signal] : []),
         ]);
         let response: Response;
